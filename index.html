@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20242a;
+      --muted: #667085;
+      --paper: #fbfaf7;
+      --panel: #ffffff;
+      --line: #d9dee8;
+      --x: #e84f4f;
+      --o: #157f8f;
+      --accent: #2f5f9f;
+      --accent-strong: #244a7d;
+      --win: #ffd36f;
+      --shadow: 0 18px 44px rgba(31, 42, 68, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(232, 79, 79, 0.13), transparent 32rem),
+        radial-gradient(circle at bottom right, rgba(21, 127, 143, 0.16), transparent 30rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+      width: min(960px, 100%);
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(280px, 360px);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .game,
+    .side-panel {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(217, 222, 232, 0.8);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .game {
+      padding: clamp(18px, 4vw, 32px);
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 4.5rem);
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .turn-badge {
+      flex: 0 0 auto;
+      min-width: 92px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    .turn-badge span {
+      display: block;
+      margin-top: 2px;
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+
+    .status {
+      min-height: 28px;
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .board {
+      width: min(100%, 520px);
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(8px, 2.2vw, 14px);
+      margin: 0 auto;
+    }
+
+    .cell {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      font-size: clamp(2.8rem, 13vw, 6.8rem);
+      font-weight: 900;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: inset 0 -8px 0 rgba(32, 36, 42, 0.04);
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .cell:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .cell:focus-visible,
+    button:focus-visible {
+      outline: 3px solid rgba(47, 95, 159, 0.35);
+      outline-offset: 3px;
+    }
+
+    .cell:disabled {
+      cursor: default;
+    }
+
+    .cell.x {
+      color: var(--x);
+    }
+
+    .cell.o {
+      color: var(--o);
+    }
+
+    .cell.win {
+      background: var(--win);
+      border-color: #f0ad21;
+      color: var(--ink);
+    }
+
+    .side-panel {
+      padding: 20px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 16px;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+
+    button.active,
+    .primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .score {
+      min-height: 82px;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      text-align: center;
+    }
+
+    .score b {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.55rem;
+    }
+
+    .note {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 14px;
+        align-items: start;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .side-panel {
+        order: -1;
+      }
+
+      .title-row {
+        align-items: center;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .title-row {
+        display: grid;
+      }
+
+      .turn-badge {
+        width: 100%;
+      }
+
+      .scoreboard {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Tic Tac Toe game">
+    <section class="game">
+      <div class="title-row">
+        <h1>Tic Tac Toe</h1>
+        <div class="turn-badge" aria-live="polite">
+          Turn
+          <span id="turn">X</span>
+        </div>
+      </div>
+
+      <p class="status" id="status">คุณเริ่มก่อน วาง X ได้เลย</p>
+
+      <div class="board" id="board" role="grid" aria-label="กระดาน Tic Tac Toe">
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 1"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 2"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 3"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 4"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 5"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 6"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 7"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 8"></button>
+        <button class="cell" role="gridcell" aria-label="ช่องที่ 9"></button>
+      </div>
+    </section>
+
+    <aside class="side-panel" aria-label="ตัวเลือกเกม">
+      <div class="controls">
+        <div class="control-group">
+          <div class="label">Mode</div>
+          <div class="mode-toggle">
+            <button id="cpuMode" class="active" type="button">Vs CPU</button>
+            <button id="twoPlayerMode" type="button">2 Players</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="label">Score</div>
+          <div class="scoreboard">
+            <div class="score">You<b id="xScore">0</b></div>
+            <div class="score">Draw<b id="drawScore">0</b></div>
+            <div class="score">CPU<b id="oScore">0</b></div>
+          </div>
+        </div>
+
+        <button class="primary" id="newRound" type="button">New Round</button>
+        <button id="resetScore" type="button">Reset Score</button>
+      </div>
+
+      <p class="note">คุณเล่นเป็น X และคอมพิวเตอร์เล่นเป็น O สลับตากันอัตโนมัติ ใครเรียงได้ 3 ช่องก่อนชนะ</p>
+    </aside>
+  </main>
+
+  <script>
+    const cells = [...document.querySelectorAll(".cell")];
+    const statusText = document.querySelector("#status");
+    const turnText = document.querySelector("#turn");
+    const twoPlayerButton = document.querySelector("#twoPlayerMode");
+    const cpuButton = document.querySelector("#cpuMode");
+    const newRoundButton = document.querySelector("#newRound");
+    const resetScoreButton = document.querySelector("#resetScore");
+    const xScoreText = document.querySelector("#xScore");
+    const oScoreText = document.querySelector("#oScore");
+    const drawScoreText = document.querySelector("#drawScore");
+
+    const wins = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    let board = Array(9).fill("");
+    let currentPlayer = "X";
+    let gameOver = false;
+    let mode = "cpu";
+    let scores = { X: 0, O: 0, draw: 0 };
+
+    function render() {
+      cells.forEach((cell, index) => {
+        const value = board[index];
+        cell.textContent = value;
+        cell.className = `cell ${value.toLowerCase()}`;
+        cell.disabled = Boolean(value) || gameOver || (mode === "cpu" && currentPlayer === "O");
+        cell.setAttribute("aria-label", value ? `ช่องที่ ${index + 1}: ${value}` : `ช่องที่ ${index + 1}: ว่าง`);
+      });
+
+      turnText.textContent = currentPlayer;
+      xScoreText.textContent = scores.X;
+      oScoreText.textContent = scores.O;
+      drawScoreText.textContent = scores.draw;
+      twoPlayerButton.classList.toggle("active", mode === "two");
+      cpuButton.classList.toggle("active", mode === "cpu");
+    }
+
+    function getWinner(state) {
+      for (const combo of wins) {
+        const [a, b, c] = combo;
+        if (state[a] && state[a] === state[b] && state[a] === state[c]) {
+          return { player: state[a], combo };
+        }
+      }
+
+      if (state.every(Boolean)) {
+        return { player: "draw", combo: [] };
+      }
+
+      return null;
+    }
+
+    function finishRound(result) {
+      gameOver = true;
+
+      if (result.player === "draw") {
+        scores.draw += 1;
+        statusText.textContent = "เสมอ รอบนี้ไม่มีผู้ชนะ";
+      } else {
+        scores[result.player] += 1;
+        result.combo.forEach((index) => cells[index].classList.add("win"));
+        if (mode === "cpu") {
+          statusText.textContent = result.player === "X" ? "คุณชนะ" : "คอมพิวเตอร์ชนะ";
+        } else {
+          statusText.textContent = `ผู้เล่น ${result.player} ชนะ`;
+        }
+      }
+
+      render();
+      result.combo.forEach((index) => cells[index].classList.add("win"));
+    }
+
+    function placeMark(index) {
+      if (board[index] || gameOver) {
+        return;
+      }
+
+      board[index] = currentPlayer;
+      const result = getWinner(board);
+
+      if (result) {
+        finishRound(result);
+        return;
+      }
+
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      statusText.textContent = mode === "cpu" && currentPlayer === "O" ? "CPU กำลังคิด..." : getTurnMessage();
+      render();
+
+      if (mode === "cpu" && currentPlayer === "O") {
+        window.setTimeout(cpuMove, 420);
+      }
+    }
+
+    function cpuMove() {
+      if (gameOver || currentPlayer !== "O") {
+        return;
+      }
+
+      const index = pickBestMove();
+      placeMark(index);
+    }
+
+    function pickBestMove() {
+      const priorities = [
+        findWinningMove("O"),
+        findWinningMove("X"),
+        board[4] === "" ? 4 : null,
+        ...[0, 2, 6, 8].filter((index) => board[index] === ""),
+        ...[1, 3, 5, 7].filter((index) => board[index] === "")
+      ];
+
+      return priorities.find((index) => index !== null && index !== undefined);
+    }
+
+    function findWinningMove(player) {
+      for (const combo of wins) {
+        const marks = combo.map((index) => board[index]);
+        if (marks.filter((mark) => mark === player).length === 2 && marks.includes("")) {
+          return combo[marks.indexOf("")];
+        }
+      }
+
+      return null;
+    }
+
+    function newRound() {
+      board = Array(9).fill("");
+      currentPlayer = "X";
+      gameOver = false;
+      statusText.textContent = mode === "cpu" ? "คุณเริ่มก่อน วาง X ได้เลย" : "ผู้เล่น X เริ่มก่อน";
+      render();
+    }
+
+    function getTurnMessage() {
+      if (mode === "cpu") {
+        return currentPlayer === "X" ? "ตาคุณ วาง X" : "ตาคอมพิวเตอร์";
+      }
+
+      return `ตาผู้เล่น ${currentPlayer}`;
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      newRound();
+    }
+
+    cells.forEach((cell, index) => {
+      cell.addEventListener("click", () => placeMark(index));
+    });
+
+    twoPlayerButton.addEventListener("click", () => setMode("two"));
+    cpuButton.addEventListener("click", () => setMode("cpu"));
+    newRoundButton.addEventListener("click", newRound);
+    resetScoreButton.addEventListener("click", () => {
+      scores = { X: 0, O: 0, draw: 0 };
+      newRound();
+    });
+
+    render();
+  </script>
+</body>
+</html>
